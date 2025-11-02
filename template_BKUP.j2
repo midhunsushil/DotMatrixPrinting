@@ -1,0 +1,98 @@
+{# ============================================ #}
+{# ESC/P2 Delivery Slip Template for Food City #}
+{# ============================================ #}
+
+{# Define ESC/P2 Commands as Variables #}
+{% set ESC = '\x1b' %}
+{% set SET_UNIT = ESC + '(U' + chr(1) + chr(0) + chr(10) %}
+{% set INIT = ESC + '@' %}
+{% set ESCP = ESC + 'P' %}{#- Selects 10.5-point, 10-cpi character printing -#}
+{% set ESC1 = ESC + '1' %}{#- Left Margin -#}
+{% set ESCQ = ESC + 'Q' %}{#- Right Margin -#}
+{% set PAGE_LENGTH = ESC + '(C' + chr(2) + chr(0) + chr(120) + chr(15) %}{#- Page Length -#}
+{% set PAGE_FORMAT = ESC + '(c' + chr(4) + chr(0) + chr(180) + chr(0) + chr(180) + chr(0) %}{#- Page top and bottom Margin -#}
+{% set ASSIGN_CHAR_TABLE = ESC + '(t' + chr(3) + chr(0) %}{#- Assign Character Table: d1,d2,d3 -#}
+{% set SET_CHAR_TABLE = ESC + 't' %}{#- Set Character Table: n -#}
+{% set SET_POINT = ESC + 'X' %}{#- Set font pitch and point: m nl nh -#}
+{% set SET_BOLD = ESC + 'E' %}{#- Set Bold -#}
+{% set UNSET_BOLD = ESC + 'F' %}{#- Unset bold -#}
+
+
+{% macro set_char_table(table=1) %}
+  {{ SET_CHAR_TABLE }}{{ chr(table) }}
+{% endmacro %}
+
+{% macro set_font(point_size, proportional=true) %}
+  {% set m = 1 if proportional else 0 %}
+  {% set n = point_size * 2 %}
+  {{ SET_POINT }}{{ chr(m) }}{{ chr(n % 256) }}{{ chr(n // 256) }}
+{% endmacro %}
+
+{% set ALIGN_LEFT = ESC + 'a\x00' %}
+{% set ALIGN_CENTER = ESC + 'a\x01' %}
+{% set ALIGN_RIGHT = ESC + 'a\x02' %}
+{% set DOUBLE_WIDTH_ON = ESC + 'w\x01' %}
+{% set DOUBLE_WIDTH_OFF = ESC + 'w\x00' %}
+{% set DOUBLE_HEIGHT_ON = ESC + 'W\x01' %}
+{% set DOUBLE_HEIGHT_OFF = ESC + 'W\x00' %}
+{% set NEWLINE = '\x0d\x0a' %}
+{% set DOUBLE_NEWLINE = '\x0d\x0a\x0d\x0a' %}
+
+{#- Initialize Printer -#}
+{{ INIT }}
+{{ SET_UNIT }}
+{{ ESCP }}
+{{ ESC1 + '5' }}
+{{ ESCQ + '80' }}
+{{ SET_UNIT }}
+{{ PAGE_LENGTH }}
+{{ ASSIGN_CHAR_TABLE+chr(0)+chr(0)+chr(0) }}
+{{ ASSIGN_CHAR_TABLE+chr(1)+chr(1)+chr(0) }}
+{{ ASSIGN_CHAR_TABLE+chr(3)+chr(13)+chr(0) }}
+{#- Print Data -#}
+{{ set_char_table }}{{ set_font(30) }}
+
+
+
+{# ========== COMPANY HEADER ========== #}
+{# Company Name - Centered, Largest Font #}
+{{ ALIGN_CENTER }}{{ DOUBLE_WIDTH_ON }}{{ DOUBLE_HEIGHT_ON }}Food City WLL{{ DOUBLE_WIDTH_OFF }}{{ DOUBLE_HEIGHT_OFF }}{{ NEWLINE }}
+
+{# Company Address Line 1 - Centered, Normal Font #}
+{{ ALIGN_CENTER }}CR No. 72659, Bldg. 1108, Road/Street 1120{{ NEWLINE }}
+
+{# Company Address Line 2 - Centered, Normal Font #}
+{{ ALIGN_CENTER }}Riffa/Al Shargi, Southern Governorate. Block.911{{ NEWLINE }}
+
+{# Company Address Line 3 - Centered, Normal Font #}
+{{ ALIGN_CENTER }}Kingdom of Bahrain{{ DOUBLE_NEWLINE }}
+
+{# ========== DOCUMENT TITLE ========== #}
+{# Document Title - Centered, Large Font #}
+{{ ALIGN_CENTER }}{{ DOUBLE_WIDTH_ON }}Delivery Slip{{ DOUBLE_WIDTH_OFF }}{{ DOUBLE_NEWLINE }}
+
+{# ========== METADATA SECTION ========== #}
+{# DN Number - Right Aligned #}
+{{ ALIGN_RIGHT }}DN Number: {{ dn_number }}{{ NEWLINE }}
+
+{# Shipping Date - Right Aligned #}
+{{ ALIGN_RIGHT }}Shipping Date: {{ shipping_date }}{{ DOUBLE_NEWLINE }}
+
+{# ========== TABLE SECTION ========== #}
+{# Reset to left alignment for table #}
+{{ ALIGN_LEFT }}
+
+{# Table Header #}
+PRODUCT          ORDERED    DELIVERED{{ NEWLINE }}
+----------------------------------------{{ NEWLINE }}
+
+{# Table Rows - Loop through items #}
+{% for item in items %}
+{{ "%-16s %-10s %-10s" | format(item.product[:16], item.ordered, item.delivered) }}{{ NEWLINE }}
+{% endfor %}
+
+{# Table Footer Line #}
+----------------------------------------{{ NEWLINE }}
+
+{# End with form feed to eject page (optional) #}
+{{ '\x0c' }}

@@ -1,64 +1,57 @@
-from jinja2 import Environment, FileSystemLoader
-import csv, sys
-import escp2
+import jinja2
+import win32print
+from datetime import datetime
 
-def load_template(dir_path="templates", name="delivery_note.txt.j2"):
-    env = Environment(loader=FileSystemLoader(dir_path), trim_blocks=True, lstrip_blocks=True)
-    # allow calling functions from the template
-    env.globals.update(esc={
-        "init": escp2.init(),
-        "bold_on": escp2.bold_on(),
-        "bold_off": escp2.bold_off(),
-        "page_setup": escp2.page_setup,
-        "formfeed": escp2.form_feed(),
-    })
-    return env.get_template(name)
+ESC = chr(27)
+template_path = "template.j2"
 
-def row_to_context(row):
-    items = []  # build from your CSV schema; here’s a sketch
-    # For “one delivery note per row” you may need to parse a JSON column or fetch items by DN id
-    items = [
-        {"name": row["item1_name"], "qty": int(row["item1_qty"]), "rate": float(row["item1_rate"]), "amount": float(row["item1_amount"])},
-        # ...
-    ]
-    return {
-        "doc": {"number": row["dn_number"], "date": row["dn_date"], "customer_name": row["customer_name"]},
-        "items": items,
-        "totals": {"grand": sum(i["amount"] for i in items)},
-    }
+def render_template(items):
+    # context = {
+    #     "ESC": ESC,
+    #     "header": "DELIVERY NOTE",
+    #     "footer": "Thank you for your business",
+    #     "date": datetime.now().strftime("%d-%m-%Y"),
+    #     "invoice_no": "001234",
+    #     "customer": "Customer Name",
+    #     "items": items,
+    #     "grand_total": "{:.2f}".format(sum(float(r["total"]) for r in items))
+    # }
+    loader = jinja2.FunctionLoader(lambda name: open(template_path, encoding="utf-8").read())
+    env = jinja2.Environment(loader=loader)  # trim_blocks=True, lstrip_blocks=True
+    env.globals['chr'] = chr
+    template = env.get_template(template_path)
+    return template.render(items)
 
-def print_raw(raw_bytes, printer_name=None):
-    # Windows
+def print_raw_text(printer_name, text):
+    hPrinter = win32print.OpenPrinter(printer_name)
     try:
-        import win32print, win32api
-        hPrinter = win32print.OpenPrinter(printer_name or win32print.GetDefaultPrinter())
-        hJob = win32print.StartDocPrinter(hPrinter, 1, ("DN", None, "RAW"))
-        win32print.StartPagePrinter(hPrinter)
-        win32print.WritePrinter(hPrinter, raw_bytes)
-        win32print.EndPagePrinter(hPrinter)
-        win32print.EndDocPrinter(hPrinter)
-        win32print.ClosePrinter(hPrinter)
-        return
-    except Exception:
-        pass
-    # Linux / macOS (CUPS)
-    import subprocess, tempfile, os
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        f.write(raw_bytes)
-        tmp = f.name
-    try:
-        subprocess.run(["lp", "-o", "raw", tmp], check=True)
+        output = text   # Form feed
+        raw_data = output.encode('cp437', errors='replace')
+        job = win32print.StartDocPrinter(hPrinter, 1, ("Delivery Note", None, "RAW"))
+        try:
+            win32print.StartPagePrinter(hPrinter)
+            win32print.WritePrinter(hPrinter, raw_data)
+            win32print.EndPagePrinter(hPrinter)
+        finally:
+            win32print.EndDocPrinter(hPrinter)
     finally:
-        os.unlink(tmp)
+        win32print.ClosePrinter(hPrinter)
 
-def main(csv_path):
-    tmpl = load_template()
-    with open(csv_path, newline='', encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            ctx = row_to_context(row)
-            text = tmpl.render(**ctx)
-            print_raw(text.encode("latin1", errors="replace"))
+# Manual test data
+data = {
+    'dn_number': 'DN-2025-001',
+    'shipping_date': '2025-10-28',
+    'items': [
+        {'product': 'Fresh Apples', 'ordered': '50 kg', 'delivered': '50 kg'},
+        {'product': 'Orange Juice', 'ordered': '24 pcs', 'delivered': '24 pcs'},
+        {'product': 'Bread Loaves', 'ordered': '100 pcs', 'delivered': '98 pcs'}
+    ]
+}
 
-if __name__ == "__main__":
-    main(sys.argv[1])
+
+
+if __name__ == '__main__':
+    printer_name = "EPSON LQ-680 ESC/P2"  # Use your actual printer name
+    output = render_template(data)
+    print(output)
+    print_raw_text(printer_name, output)

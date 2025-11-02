@@ -4,6 +4,10 @@ SI  = "\x0F"  # condensed (≈17 CPI) on
 DC2 = "\x12"  # condensed off
 FF  = "\x0C"  # form feed
 
+def set_unit(m=10):
+    # Sets the unit to m/3600 inch
+    return ESC + "(U"+"10"+m
+
 def init():
     return ESC + "@"
 
