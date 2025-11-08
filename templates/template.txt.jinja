@@ -25,18 +25,18 @@
 {{- FONT_3 -}}{{- set_hori_pos(3.5) -}}{{- SET_BOLD -}}Delivery Slip{{- UNSET_BOLD -}}{{- NEWLINE -}}
 {{- NEWLINE -}}
 {{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Source Location: {{ UNSET_BOLD -}}MCS/Stock
-{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}DN Reference: MCS/BT/00019{{- UNSET_BOLD -}}{{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}
-{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}Shipping Date: {{ UNSET_BOLD }}01-02-2025{{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Destination Location: {{ UNSET_BOLD -}}Inter Branch Transit{{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Source Location: {{ UNSET_BOLD -}}{{- data["Source Location"] -}}
+{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}DN Reference: {{ data["Reference"] -}}{{- UNSET_BOLD -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}{{- data["Source Location/Barcode"] -}}
+{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}Shipping Date: {{ UNSET_BOLD }}{{- data["Scheduled Date"] -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Destination Location: {{ UNSET_BOLD -}}{{- data["Destination Location"] -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}{{- data["Destination Location/Barcode"] -}}{{- NEWLINE -}}
 {{- NEWLINE -}}
-{{- products -}}
+{{- products_table -}}
 {{- NEWLINE -}}{{- NEWLINE -}}
 {{- set_left_right_margin() -}}
 {{- FONT_2 -}}Prepared by{{- set_hori_pos(8.5/3) -}}Delivered by{{- set_hori_pos(8.5/3*2) -}}Received by{{- NEWLINE -}}{{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Name: Irfad{{- set_hori_pos(8.5/3) -}}Name: {{- set_hori_pos(8.5/3*2) -}}Name: {{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Name: {{ data["Contact"] -}}{{- set_hori_pos(8.5/3) -}}Name: {{- set_hori_pos(8.5/3*2) -}}Name: {{- NEWLINE -}}{{- NEWLINE -}}
 {{- FONT_4 -}}{{- SET_BOLD -}}ID: {{- set_hori_pos(8.5/3) -}}ID: {{- set_hori_pos(8.5/3*2) -}}{{- NEWLINE -}}{{- NEWLINE -}}
 {{- FONT_4 -}}{{- SET_BOLD -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{- set_hori_pos(8.5/3) -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{- set_hori_pos(8.5/3*2) -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{ UNSET_BOLD }}{{- NEWLINE -}}
 {#- End with form feed to eject page (optional) -#}

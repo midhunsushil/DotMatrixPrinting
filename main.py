@@ -2,6 +2,7 @@ import jinja2
 import win32print
 import pandas as pd
 import escp2
+import pathlib
 
 ESC = chr(27)
 template_path = "template.txt.jinja"
@@ -21,42 +22,30 @@ def convert_to_pc864(text):
     # Decode back to string
     return pc864_bytes.decode('cp437')
 
-def render_template(items):
+def render_template(data):
     loader = jinja2.FileSystemLoader("templates")
     env = jinja2.Environment(loader=loader)  # trim_blocks=True, lstrip_blocks=True
     escp2.register_jinja_globals(env)
     template = env.get_template(template_path)
-    data = {"products": create_table_escp2(getdata()[0]["products"])}
     # print(data)
-    return template.render(data)
+    return template.render(data=data, products_table=create_table_escp2(data["products"]))
 
-def print_raw_text(printer_name, text):
-    hPrinter = win32print.OpenPrinter(printer_name)
-    try:
-        output = text   # Form feed
-        raw_data = output.encode('cp437', errors="replace")
-        # raw_data = text
-        job = win32print.StartDocPrinter(hPrinter, 1, ("Delivery Note", None, "RAW"))
-        try:
-            win32print.StartPagePrinter(hPrinter)
-            win32print.WritePrinter(hPrinter, raw_data)
-            win32print.EndPagePrinter(hPrinter)
+def print_raw_text(printer_name, document, dry_run=False):
+    print("Printing", document["name"])
+    print(document["render"])
+    if not dry_run:
+        hPrinter = win32print.OpenPrinter(printer_name)
+        try:   # Form feed
+            raw_data = document.render.encode('cp437', errors="replace")
+            job = win32print.StartDocPrinter(hPrinter, 1, (document.name, None, "RAW"))
+            try:
+                win32print.StartPagePrinter(hPrinter)
+                win32print.WritePrinter(hPrinter, raw_data)
+                win32print.EndPagePrinter(hPrinter)
+            finally:
+                win32print.EndDocPrinter(hPrinter)
         finally:
-            win32print.EndDocPrinter(hPrinter)
-    finally:
-        win32print.ClosePrinter(hPrinter)
-
-# Manual test data
-data = {
-    'dn_number': 'DN-2025-001',
-    'shipping_date': '2025-10-28',
-    'items': [
-        {'product': 'Fresh Apples', 'ordered': '50 kg', 'delivered': '50 kg'},
-        {'product': 'Orange Juice', 'ordered': '24 pcs', 'delivered': '24 pcs'},
-        {'product': 'Bread Loaves', 'ordered': '100 pcs', 'delivered': '98 pcs'}
-    ]
-}
-
+            win32print.ClosePrinter(hPrinter)
 
 def create_table_escp2(products):
     """Create ESC/P2 formatted table for dot matrix printer"""
@@ -166,29 +155,33 @@ def create_table_escp2(products):
     return output.decode('cp437')
 
 
-def getdata():
+def getdata(input_file):
     # Read the Excel file
-    df = pd.read_excel('Transfer (stock.picking) (35).xlsx')
+    df = pd.read_excel(pathlib.Path(input_file))
 
     # Extract delivery notes with their products
     delivery_notes = []
 
     # Iterate through rows to find delivery notes (rows with Reference value)
     for idx, row in df.iterrows():
-        if pd.notna(row['Reference']):
+        if 'Reference' in df.columns and pd.notna(row['Reference']):
             # This is a delivery note row: Contains DN info + 1 product details
             dn_info = {
                 "Reference": str(row['Reference']),
-                "Date": pd.Timestamp(row['Scheduled Date']).strftime('%Y-%m-%d %H:%M:%S'),
-                "Source Location": str(row['Source Location']) if pd.notna(row['Source Location']) else "",
+                "Scheduled Date": pd.Timestamp(row['Scheduled Date']).strftime('%d/%m/%Y') if 'Scheduled Date' in df.columns and pd.notna(row['Scheduled Date']) else "",
+                "Source Location": str(row['Source Location']) if 'Source Location' in df.columns and pd.notna(row['Source Location']) else "",
                 "Source Location/Barcode": str(row['Source Location/Barcode']) if 'Source Location/Barcode' in df.columns and pd.notna(
                     row['Source Location/Barcode']) else "",
-                "Destination Location": str(row['Destination Location']) if pd.notna(
+                "Destination Location": str(row['Destination Location']) if 'Destination Location' in df.columns and pd.notna(
                     row['Destination Location']) else "",
-                "Destination Location/Barcode": str(row['Destination Location/Barcode']) if pd.notna(
+                "Destination Location/Barcode": str(row['Destination Location/Barcode']) if 'Destination Location/Barcode' in df.columns and pd.notna(
                     row['Destination Location/Barcode']) else "",
+                "Contact": str(row['Contact']) if 'Contact' in df.columns and pd.notna(
+                    row['Contact']) else "",
                 "products": []
             }
+
+            print(dn_info)
 
             # Add first product from this row
             product = {
@@ -200,7 +193,7 @@ def getdata():
             dn_info["products"].append(product)
             delivery_notes.append(dn_info)
 
-        elif pd.isna(row['Reference']) and pd.notna(row['Operations/Product']):
+        elif pd.isna(row['Reference']) and 'Operations/Product' in df.columns and pd.notna(row['Operations/Product']):
             # This is a product row. Add this product to the latest dn_info.
             product = {
                 "product": str(row['Operations/Product']) or "",
@@ -211,20 +204,30 @@ def getdata():
             latest_dn_info = delivery_notes[-1]
             latest_dn_info["products"].append(product)
 
-    # # Or save to file
-    # with open('delivery_notes.json', 'w', encoding='utf-8') as f:
-    #     json.dump(delivery_notes, f, indent=2, ensure_ascii=False)
-
     return delivery_notes
 
 
+def main():
+    # Define input xlsx file
+    input_file = pathlib.Path(r'Transfer (stock.picking) (35).xlsx')
+    # Take the xlsx file extract an array of delivery notes from it
+    delivery_notes = getdata(input_file)
+    # For each delivery note in the array, create a printable document using jinja2
+    documents = [{"name": "DN "+ dn["Reference"], "render": render_template(dn) } for dn in delivery_notes]
+    # Define printer name
+    printer_name = "EPSON LQ-680 ESC/P2"
+    # Print each document
+    for doc in documents:
+        print_raw_text(printer_name, doc, dry_run=True)
+
 if __name__ == '__main__':
-    printer_name = "EPSON LQ-680 ESC/P2"  # Use your actual printer name
-    output = render_template(data)
-    print(output)
+    # printer_name = "EPSON LQ-680 ESC/P2"  # Use your actual printer name
+    # output = render_template(data)
+    # print(output)
     # getdata()
     # Usage
     # arabic_text = "[GS019] Al-Dair Primary & Intermediate School for Girls | مدرسة الدير الابتدائية الإعدادية للبنات"
     # pc864_text = convert_to_pc864(arabic_text)
     # print(pc864_text)
     # print_raw_text(printer_name, output)
+    main()
