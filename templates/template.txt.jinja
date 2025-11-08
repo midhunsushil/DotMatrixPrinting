@@ -1,0 +1,43 @@
+{#- Define ESC/P2 Commands as Variables -#}
+{%- set page = dict(defined_unit=10/3600, length=11, width=8.5, margin_left=0.5) -%}
+{%- set FONT_1 = set_char_table() + set_font_size(30) + set_font(7) -%}{#- Set font TITLE -#}
+{%- set FONT_2 = set_char_table() + set_font_size(14) + set_font(7) -%}{#- Set font Subtitle -#}
+{%- set FONT_3 = set_char_table() + set_font_size(20) + set_font(0) -%}{#- Set font TITLE 2 -#}
+{%- set FONT_4 = set_char_table() + set_font_size(12) + set_font(0) -%}{#- Set font Body -#}
+{%- set FONT_5 = set_char_table(3) + set_font_size(14) + set_font(0) -%}{#- Set font Arabic -#}
+{#- Initialize Printer -#}
+{{- INIT -}}
+{{- set_unit() -}}
+{{- set_left_right_margin(0.5) -}}
+{{- set_page_length_width() -}}
+{{- set_top_bottom_margin(0.7, 0.5) -}}
+{{- ASSIGN_CHAR_TABLE+chr(0)+chr(0)+chr(0) -}}
+{{- ASSIGN_CHAR_TABLE+chr(1)+chr(1)+chr(0) -}}
+{{- ASSIGN_CHAR_TABLE+chr(3)+chr(42)+chr(0) -}}
+{#- Print Data -#}
+{{- FONT_1 -}}{{- set_hori_pos(calculate_center_inch(3.3465)) -}}Food City WLL{{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_2 -}}{{- set_hori_pos(calculate_center_inch(4.5276)) -}}CR No. 72659, Bldg. 1108, Road/Street 1120{{- NEWLINE -}}
+{{- FONT_2 -}}{{- set_hori_pos(calculate_center_inch(5.1181)) -}}Riffa/Al Shargi, Southern Governorate. Block.911{{- NEWLINE -}}
+{{- FONT_2 -}}{{- set_hori_pos(3.5) -}}Kingdom of Bahrain{{- NEWLINE -}}
+{{- NEWLINE -}}
+{{- NEWLINE -}}
+{{- NEWLINE -}}
+{{- FONT_3 -}}{{- set_hori_pos(3.5) -}}{{- SET_BOLD -}}Delivery Slip{{- UNSET_BOLD -}}{{- NEWLINE -}}
+{{- NEWLINE -}}
+{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Source Location: {{ UNSET_BOLD -}}MCS/Stock
+{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}DN Reference: MCS/BT/00019{{- UNSET_BOLD -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}
+{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}Shipping Date: {{ UNSET_BOLD }}01-02-2025{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Destination Location: {{ UNSET_BOLD -}}Inter Branch Transit{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}{{- NEWLINE -}}
+{{- NEWLINE -}}
+{{- products -}}
+{{- NEWLINE -}}{{- NEWLINE -}}
+{{- set_left_right_margin() -}}
+{{- FONT_2 -}}Prepared by{{- set_hori_pos(8.5/3) -}}Delivered by{{- set_hori_pos(8.5/3*2) -}}Received by{{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Name: Irfad{{- set_hori_pos(8.5/3) -}}Name: {{- set_hori_pos(8.5/3*2) -}}Name: {{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}ID: {{- set_hori_pos(8.5/3) -}}ID: {{- set_hori_pos(8.5/3*2) -}}{{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{- set_hori_pos(8.5/3) -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{- set_hori_pos(8.5/3*2) -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{ UNSET_BOLD }}{{- NEWLINE -}}
+{#- End with form feed to eject page (optional) -#}
+{{- FF -}}{{- INIT -}}

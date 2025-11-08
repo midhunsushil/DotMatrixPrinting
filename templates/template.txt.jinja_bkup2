@@ -18,6 +18,7 @@
 {%- set SET_BOLD = ESC + 'E' -%}{#- Set Bold -#}
 {%- set UNSET_BOLD = ESC + 'F' -%}{#- Unset bold -#}
 {%- set SET_FONT = ESC + 'k' -%}{#- Set font -#}
+{%- set SET_SCORE = ESC + '(-' + chr(3) + chr(0) + chr(1) -%}{#- Set score -#}
 {%- set SET_HORI_POS = ESC + '$' -%}{#- Set absolute horizontal position: nl,nh -#}
 {%- macro set_hori_pos(position_inch) -%}
 {#- Position from margin = position from edge - margin -#}
@@ -43,7 +44,7 @@
 {%- set FONT_2 = set_char_table() + set_font_size(14) + set_font(7) -%}{#- Set font Subtitle -#}
 {%- set FONT_3 = set_char_table() + set_font_size(20) + set_font(0) -%}{#- Set font TITLE 2 -#}
 {%- set FONT_4 = set_char_table() + set_font_size(12) + set_font(0) -%}{#- Set font Body -#}
-{%- set FONT_5 = set_char_table(3) + set_font_size(12) + set_font(0) -%}{#- Set font Arabic -#}
+{%- set FONT_5 = set_char_table(3) + set_font_size(14) + set_font(0) -%}{#- Set font Arabic -#}
 {#- Initialize Printer -#}
 {{- INIT -}}
 {{- SET_UNIT -}}
@@ -53,11 +54,11 @@
 {{- PAGE_FORMAT -}}
 {{- ASSIGN_CHAR_TABLE+chr(0)+chr(0)+chr(0) -}}
 {{- ASSIGN_CHAR_TABLE+chr(1)+chr(1)+chr(0) -}}
-{{- ASSIGN_CHAR_TABLE+chr(3)+chr(13)+chr(0) -}}
+{{- ASSIGN_CHAR_TABLE+chr(3)+chr(42)+chr(0) -}}
 {#- Print Data -#}
-{{- FONT_1 -}}{{- set_hori_pos(3) -}}Food City WLL{{- NEWLINE -}}{{- NEWLINE -}}
-{{- FONT_2 -}}{{- set_hori_pos(2.5) -}}CR No. 72659, Bldg. 1108, Road/Street 1120{{- NEWLINE -}}
-{{- FONT_2 -}}{{- set_hori_pos(2.2) -}}Riffa/Al Shargi, Southern Governorate. Block.911{{- NEWLINE -}}
+{{- FONT_1 -}}{{- set_hori_pos(calculate_center_inch(3.3465)) -}}Food City WLL{{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_2 -}}{{- set_hori_pos(calculate_center_inch(4.5276)) -}}CR No. 72659, Bldg. 1108, Road/Street 1120{{- NEWLINE -}}
+{{- FONT_2 -}}{{- set_hori_pos(calculate_center_inch(5.1181)) -}}Riffa/Al Shargi, Southern Governorate. Block.911{{- NEWLINE -}}
 {{- FONT_2 -}}{{- set_hori_pos(3.5) -}}Kingdom of Bahrain{{- NEWLINE -}}
 {{- NEWLINE -}}
 {{- NEWLINE -}}
@@ -65,14 +66,19 @@
 {{- FONT_3 -}}{{- set_hori_pos(3.5) -}}{{- SET_BOLD -}}Delivery Slip{{- UNSET_BOLD -}}{{- NEWLINE -}}
 {{- NEWLINE -}}
 {{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Source Location: {{ UNSET_BOLD -}}MCK/Store
-{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}DN Reference: MK/FT/02791{{- UNSET_BOLD -}}{{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}MKSTOCK
-{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}Shipping Date: {{ UNSET_BOLD }}13/10/2025 18:02:56{{- NEWLINE -}}
-{{- FONT_5 -}}{{- SET_BOLD -}}Destination Location: {{ UNSET_BOLD -}}[GS019] Al‑Dair Primary & Intermediate School for Girls | مدرسة الدير الابتدائية الإعدادية للبنات{{- NEWLINE -}}
-{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}GALALI - 1{{- NEWLINE -}}
-
-
-
+{{- FONT_4 -}}{{- SET_BOLD -}}Source Location: {{ UNSET_BOLD -}}MCS/Stock
+{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}DN Reference: MCS/BT/00019{{- UNSET_BOLD -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}
+{{- set_hori_pos(8.5-3.1) -}}{{- SET_BOLD -}}Shipping Date: {{ UNSET_BOLD }}01-02-2025{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Destination Location: {{ UNSET_BOLD -}}Inter Branch Transit{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Location Code: {{ UNSET_BOLD -}}{{- NEWLINE -}}
+{{- NEWLINE -}}
+{{- products -}}
+{{- NEWLINE -}}{{- NEWLINE -}}
+{{- set_left_right_margin() -}}
+{{- FONT_2 -}}Prepared by{{- set_hori_pos(8.5/3) -}}Delivered by{{- set_hori_pos(8.5/3*2) -}}Received by{{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Name: Irfad{{- set_hori_pos(8.5/3) -}}Name: {{- set_hori_pos(8.5/3*2) -}}Name: {{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}ID: {{- set_hori_pos(8.5/3) -}}ID: {{- set_hori_pos(8.5/3*2) -}}{{- NEWLINE -}}{{- NEWLINE -}}
+{{- FONT_4 -}}{{- SET_BOLD -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{- set_hori_pos(8.5/3) -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{- set_hori_pos(8.5/3*2) -}}Signature: {{ SET_SCORE + chr(1) + chr(1) + ' '*10 + SET_SCORE + chr(1) + chr(0) -}}{{ UNSET_BOLD }}{{- NEWLINE -}}
 {#- End with form feed to eject page (optional) -#}
 {{- FF -}}{{- INIT -}}
