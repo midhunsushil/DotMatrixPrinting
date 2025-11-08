@@ -5,10 +5,23 @@ import escp2
 import pathlib
 
 ESC = chr(27)
-template_path = "template.txt.jinja"
 
 import arabic_reshaper
 from bidi.algorithm import get_display
+
+import configparser
+
+
+def load_config():
+    """Load configuration from config.ini file"""
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+
+    return {
+        'input_file': config.get('global', 'input_file'),
+        'printer_name': config.get('global', 'printer_name'),
+        'template_file': config.get('global', 'template_file')
+    }
 
 
 def convert_to_pc864(text):
@@ -22,11 +35,11 @@ def convert_to_pc864(text):
     # Decode back to string
     return pc864_bytes.decode('cp437')
 
-def render_template(data):
+def render_template(data, template_file):
     loader = jinja2.FileSystemLoader("templates")
     env = jinja2.Environment(loader=loader)  # trim_blocks=True, lstrip_blocks=True
     escp2.register_jinja_globals(env)
-    template = env.get_template(template_path)
+    template = env.get_template(template_file)
     # print(data)
     return template.render(data=data, products_table=create_table_escp2(data["products"]))
 
@@ -36,8 +49,8 @@ def print_raw_text(printer_name, document, dry_run=False):
     if not dry_run:
         hPrinter = win32print.OpenPrinter(printer_name)
         try:   # Form feed
-            raw_data = document.render.encode('cp437', errors="replace")
-            job = win32print.StartDocPrinter(hPrinter, 1, (document.name, None, "RAW"))
+            raw_data = document['render'].encode('cp437', errors="replace")
+            job = win32print.StartDocPrinter(hPrinter, 1, (document['name'], None, "RAW"))
             try:
                 win32print.StartPagePrinter(hPrinter)
                 win32print.WritePrinter(hPrinter, raw_data)
@@ -188,7 +201,7 @@ def getdata(input_file):
                 "product": str(row['Operations/Product']) or "",
                 "qty": str(row['Operations/Quantity']) or "",
                 "qty_done": str(row['Operations/Qty Done']) or "",
-                "uom": str(row['Operations/Unit of Measure']) or ""
+                "uom": str(row['Operations/Unit of Measure']) if 'Operations/Unit of Measure' in df.columns else ""
             }
             dn_info["products"].append(product)
             delivery_notes.append(dn_info)
@@ -199,26 +212,45 @@ def getdata(input_file):
                 "product": str(row['Operations/Product']) or "",
                 "qty": str(row['Operations/Quantity']) or "",
                 "qty_done": str(row['Operations/Qty Done']) or "",
-                "uom": str(row['Operations/Unit of Measure']) or ""
+                "uom": str(row['Operations/Unit of Measure']) if 'Operations/Unit of Measure' in df.columns else ""
             }
             latest_dn_info = delivery_notes[-1]
             latest_dn_info["products"].append(product)
 
     return delivery_notes
 
+from tkinter import Tk, filedialog
+
+def select_input_file():
+    """Open file picker dialog to select Excel file"""
+    root = Tk()
+    root.withdraw()  # Hide the main tkinter window
+
+    file_path = filedialog.askopenfilename(
+        title='Select Excel File',
+        filetypes=[
+            ('Excel files', '*.xlsx'),
+            ('Excel files', '*.xls'),
+            ('All files', '*.*')
+        ]
+    )
+
+    root.destroy()  # Clean up
+    return pathlib.Path(file_path)
 
 def main():
+    config = load_config()
     # Define input xlsx file
-    input_file = pathlib.Path(r'Transfer (stock.picking) (35).xlsx')
+    input_file = select_input_file()
     # Take the xlsx file extract an array of delivery notes from it
     delivery_notes = getdata(input_file)
     # For each delivery note in the array, create a printable document using jinja2
-    documents = [{"name": "DN "+ dn["Reference"], "render": render_template(dn) } for dn in delivery_notes]
+    documents = [{"name": "DN "+ dn["Reference"], "render": render_template(dn, config['template_file']) } for dn in delivery_notes]
     # Define printer name
-    printer_name = "EPSON LQ-680 ESC/P2"
+    printer_name = config['printer_name']
     # Print each document
     for doc in documents:
-        print_raw_text(printer_name, doc, dry_run=True)
+        print_raw_text(printer_name, doc, dry_run=False)
 
 if __name__ == '__main__':
     # printer_name = "EPSON LQ-680 ESC/P2"  # Use your actual printer name
